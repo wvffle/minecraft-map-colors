@@ -1,91 +1,21 @@
-import getPixels from 'get-pixels'
-import { promisify } from 'util'
+export function getColor (r1, g1, b1) {
+	let i = 0xffffffff
+	let result = 0
+	
+	// fastest iteration
+	for (let reverse = COLORS.length - 1; reverse >= 0; reverse--) {
+		const { r: r2, g: g2, b: b2 } = COLORS[reverse]
+		const deviation = ((r2 - r1) * 0.3) ** 2 
+			+ ((g2 - g1) * 0.59) ** 2 
+			+ ((b2 - b1) * 0.11) ** 2
 
-const pixels = promisify(getPixels)
-
-export default class {
-	/**
-	 * This function take a color and return the closest color according to human eyes conception available in minecraft pc
-	 * @param {Number} r
-	 * @param {Number} g
-	 * @param {Number} b
-	 * @returns the id of the closest minecraft compatible color
-	 */
-	@cache
-	static nearestMatch(r1, g1, b1) {
-		let i = 0xffffffff
-		let result = 0
-		// fastest iteration
-		for (let reverse = COLORS.length - 1; reverse >= 0; reverse--) {
-			const { r: r2, g: g2, b: b2 } = COLORS[reverse]
-			const deviation = ((r2 - r1) * 0.3) ** 2 + ((g2 - g1) * 0.59) ** 2 + ((b2 - b1) * 0.11) ** 2
-			if (deviation < i) {
-				i = deviation
-				result = reverse + 4
-			}
+		if (deviation < i) {
+			i = deviation
+			result = reverse + 4
 		}
-		return result
 	}
 
-	/**
-	 * Take an image and return a buffer array of minecraft compatible colors
-	 * @param {String} path the image path (can be an url)
-	 * @returns an array of id
-	 */
-	static async fromImage(path) {
-		const img = await pixels(path)
-		const [width, height] = img.shape
-		const result = new Uint8Array(width * height)
-		let i = 0
-		for (let x = 0; x < width; x++)
-			for (let y = 0; y < height; y++) {
-				result[i++] = this.nearestMatch(img.get(x, y, 0), img.get(x, y, 1), img.get(x, y, 2))
-			}
-		return result
-	}
-
-	/**
-	 *
-	 * @param {Number} id
-	 * @returns an Object { r, g, b } of the color corresponding to the minecraft id
-	 * @see https://minecraft.gamepedia.com/Map_item_format
-	 */
-	static color(id) {
-		if (id < 4 || id > 207) throw new Error(`${id} is out of bounds`)
-		return COLORS[id - 4]
-	}
-
-	/**
-	 *
-	 * @param {Number} id
-	 * @returns Hexadecimal value of the color corresponding to the minecraft id
-	 * @see https://minecraft.gamepedia.com/Map_item_format
-	 */
-	static hex(id) {
-		const { r, g, b } = this.color(id)
-		return toHex(r, g, b)
-	}
-}
-
-function toHex(r, g, b) {
-	return ((r & 0xff) << 16) + ((g & 0xff) << 8) + (b & 0xff)
-}
-
-function cache(...a) {
-	const cached = new Map()
-	const nearest = a[2].value
-	return {
-		...a[2],
-		value(r, g, b) {
-			const hex = toHex(r, g, b)
-			let result = cached.get(hex)
-			if (result === undefined) {
-				result = nearest(r, g, b)
-				cached.set(hex, result)
-			}
-			return result
-		},
-	}
+	return result
 }
 
 // 1.12
