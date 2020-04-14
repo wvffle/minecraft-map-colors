@@ -2,6 +2,7 @@
 	"name": "@wvffle/minecraft-map-colors",
 	"version": "1.1.2",
 	"description": "Minecraft map colors utility",
+	"main": "src/mapColors.js",
 	"author": "Sceat",
 	"license": "MIT",
 	"homepage": "https://aresrpg.fr"
